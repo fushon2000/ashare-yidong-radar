@@ -1,0 +1,9 @@
+nodeLinker: hoisted
+minimumReleaseAgeExclude:
+  - '@types/react@19.3.3'
+  - '@vitest/mocker@5.1.2'
+  - '@vitest/spy@5.1.2'
+  - vitest@5.1.2
+allowBuilds:
+  electron: true
+  electron-winstaller: true

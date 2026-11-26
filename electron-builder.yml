@@ -1,0 +1,22 @@
+appId: com.local.ashare.yidong
+productName: A股异动雷达
+directories:
+  output: release
+  buildResources: resources
+files:
+  - out/**/*
+  - package.json
+  - '!node_modules/**/*'
+extraResources:
+  - from: resources/icon.png
+    to: icon.png
+asar: true
+win:
+  icon: resources/icon.ico
+  target:
+    - target: portable
+      arch:
+        - x64
+  artifactName: A股异动雷达-${version}-win-${arch}.${ext}
+portable:
+  artifactName: A股异动雷达-${version}-win-${arch}.${ext}
