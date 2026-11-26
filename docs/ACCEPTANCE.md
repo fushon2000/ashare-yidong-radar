@@ -6,10 +6,14 @@
 
 ### 交付物
 
-| 文件 | 大小（字节） | SHA256 |
+| 文件（本地构建名） | 大小（字节） | SHA256 |
 |---|---:|---|
 | `A股异动雷达-1.2.0-win-x64.exe` | 137,212,416 | `8AFFCFC15F7612A8C4293B1B8751C9FFEA8E83383B3EF801447046C6D1C3AB90` |
 | `A股异动雷达-1.2.0-win-x64-portable.zip` | 137,207,608 | `67B518B5BC301D01063B3BA04B1BDE43BCEEF512620851537B5DA6F9A8CC1C46` |
+
+GitHub Release 上对应的附件名为 ASCII 形式（GitHub 会剥离非 ASCII 字符）：
+`ashare-yidong-radar-1.2.0-win-x64.exe`、`ashare-yidong-radar-1.2.0-win-x64-portable.zip`，
+内容与本表所列文件逐字节一致。
 
 - 单文件 exe 内嵌 payload 与 ZIP **逐字节一致**（已用程序集资源流实测校验）。
 - ZIP 内主程序为 `AshareYidongRadar.exe`，Electron 38.8.6 运行时完整（含 `d3dcompiler_47.dll`）。

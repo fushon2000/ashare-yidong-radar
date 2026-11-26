@@ -22,13 +22,18 @@
 
 ## 快速开始
 
+从 [Releases](https://github.com/fushon2000/ashare-yidong-radar/releases) 下载，二选一：
+
 ### 方式一：单文件便携版
 
-双击 `A股异动雷达-1.2.0-win-x64.exe`。首次启动会解压运行文件到 `%LOCALAPPDATA%\AshareYidongRadar`，之后直接启动。
+下载 `ashare-yidong-radar-1.2.0-win-x64.exe`，双击运行。首次启动会解压运行文件到 `%LOCALAPPDATA%\AshareYidongRadar`，之后直接启动。
 
 ### 方式二：解压即用
 
-解压 `A股异动雷达-1.2.0-win-x64-portable.zip`，双击 `AshareYidongRadar.exe`。不需要安装 Python、Node 或浏览器插件。
+下载 `ashare-yidong-radar-1.2.0-win-x64-portable.zip`，解压后双击其中的 `AshareYidongRadar.exe`。不需要安装 Python、Node 或浏览器插件。
+
+> Release 附件用 ASCII 文件名，是因为 GitHub 会剥离附件名中的非 ASCII 字符；文件内容与本地构建完全一致（SHA256 见 Release 说明）。
+> 自行打包时产物默认是中文名 `A股异动雷达-1.2.0-win-x64*.{exe,zip}`，同一份文件。
 
 首次运行如遇 Windows SmartScreen“未知发布者”，选择“更多信息 → 仍要运行”即可。程序未做代码签名。
 
