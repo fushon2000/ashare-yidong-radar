@@ -31,7 +31,7 @@ export interface OutlookInput {
  */
 export function projectSeries(
   series: AlignedRow[],
-  day: 0 | 1 | 2,
+  day: 0 | 1 | 2 | 3 | 4,
   gain: number,
   indexFuture = 0
 ): AlignedRow[] {
@@ -69,7 +69,7 @@ export function projectSeries(
  * 今日剩余额度 = (1 + limit) / (1 + 今日已实现涨幅) - 1；
  * 到第 d 日共有 d + 1 个额度（今日剩余 + 之后 d 个交易日）。
  */
-export function gainBudget(limitPct: number, day: 0 | 1 | 2, todayPct: number): number {
+export function gainBudget(limitPct: number, day: 0 | 1 | 2 | 3 | 4, todayPct: number): number {
   if (!(limitPct > 0)) return 0
   const base = 1 + todayPct / 100
   if (base <= 0) return 0
@@ -90,7 +90,7 @@ interface WindowProducts {
 function windowProducts(
   series: AlignedRow[],
   window: 10 | 30,
-  day: 0 | 1 | 2,
+  day: 0 | 1 | 2 | 3 | 4,
   indexFuture: number
 ): WindowProducts {
   const n = series.length
@@ -130,7 +130,7 @@ function limitUpsFor(needPct: number, limitPct: number): number | null {
 export function solveNeedUp(
   series: AlignedRow[],
   window: 10 | 30,
-  day: 0 | 1 | 2,
+  day: 0 | 1 | 2 | 3 | 4,
   thresholdPct: number,
   indexFuture = 0
 ): { needUpPct: number; deviationAt: number } | null {
@@ -152,7 +152,7 @@ export function solveNeedUp(
  */
 function solveCountNeed(
   series: AlignedRow[],
-  day: 0 | 1 | 2,
+  day: 0 | 1 | 2 | 3 | 4,
   maxGain: number,
   indexFuture: number,
   hit: (rows: AlignedRow[]) => boolean
@@ -183,12 +183,12 @@ function solveCountNeed(
   return high
 }
 
-const DAY_LABELS: Record<0 | 1 | 2, string> = { 0: '当日', 1: '第二日', 2: '第三日' }
-const ALL_DAYS = [0, 1, 2] as const
+const DAY_LABELS: Record<0 | 1 | 2 | 3 | 4, string> = { 0: '当日', 1: '第二日', 2: '第三日', 3: '第四日', 4: '第五日' }
+const ALL_DAYS = [0, 1, 2, 3, 4] as const
 const ALL_WINDOWS = [10, 30] as const
 
 /**
- * 当日 / 第二日 / 第三日 三个时点的严重异动触发测算。
+ * 当日 / 第二日 / 第三日 / 第四日 / 第五日 五个时点的严重异动触发测算。
  *
  * 口径（详见 docs/SPEC-v1.1.md）：「再涨 X%」= 相对现价，到该时点收盘为止
  * 累计需要再上涨的百分比。基准指数未来默认不再变动。
