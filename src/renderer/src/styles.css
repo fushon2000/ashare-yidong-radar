@@ -544,6 +544,22 @@ summary:focus-visible {
   min-height: 0;
 }
 
+/* 折叠：只留头部一行，列表与底部隐藏 */
+.sidebar.collapsed .watch-list,
+.sidebar.collapsed .sidebar-foot {
+  display: none;
+}
+
+.collapse-icon {
+  display: inline-flex;
+  transition: transform 0.2s ease;
+}
+
+.sidebar.collapsed .collapse-icon {
+  transform: rotate(180deg);
+}
+
+
 .main-panel {
   flex: 1;
   min-width: 0;
@@ -603,100 +619,6 @@ summary:focus-visible {
 .tiny-icon:hover {
   background: var(--card-soft);
   color: var(--text);
-}
-
-.group-tabs {
-  display: flex;
-  gap: 0;
-  padding: 0 16px;
-  overflow-x: auto;
-  border-bottom: 1px solid var(--border);
-  scrollbar-width: none;
-}
-
-.group-tabs::-webkit-scrollbar {
-  display: none;
-}
-
-.group-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  height: 36px;
-  margin-bottom: -1px;
-  padding: 0 10px;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  background: transparent;
-  color: var(--text-2);
-  font-size: 12px;
-  white-space: nowrap;
-}
-
-.group-tab em {
-  font-family: var(--font-mono);
-  font-style: normal;
-  font-size: 11px;
-  color: var(--text-4);
-}
-
-.group-tab:hover {
-  color: var(--text);
-  border-bottom-color: var(--border-strong);
-}
-
-.group-tab.active {
-  color: var(--text);
-  font-weight: 600;
-  border-bottom-color: var(--blue);
-}
-
-.group-tab.active em {
-  color: var(--blue);
-}
-
-.group-tab.drop {
-  background: var(--blue-soft);
-}
-
-.group-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 8px 16px;
-  border-bottom: 1px solid var(--border);
-}
-
-.group-name-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  max-width: 190px;
-  padding: 2px 0;
-  border: 0;
-  background: transparent;
-  color: var(--text-2);
-  font-size: 12px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.group-name-button:hover {
-  color: var(--blue);
-}
-
-.link-danger {
-  padding: 2px 0;
-  border: 0;
-  background: transparent;
-  color: var(--up);
-  font-size: 12px;
-}
-
-.link-danger:hover {
-  text-decoration: underline;
 }
 
 .watch-list {

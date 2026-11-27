@@ -31,8 +31,7 @@ beforeEach(() => {
   const state = {
     ...DEFAULT_STATE,
     settings,
-    stocks: [],
-    groups: [{ id: 'default', name: '默认分组', order: 0 }]
+    stocks: []
   }
   const api = {
     market: {
@@ -52,10 +51,6 @@ beforeEach(() => {
     },
     notify: {
       show: vi.fn(async () => true)
-    },
-    csv: {
-      export: vi.fn(async () => ({ canceled: true })),
-      import: vi.fn(async () => ({ canceled: true }))
     },
     app: {
       quit: vi.fn(async () => undefined),

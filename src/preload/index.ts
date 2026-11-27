@@ -2,7 +2,6 @@ import { contextBridge, ipcRenderer } from 'electron'
 import type { AppApi } from '../shared/api'
 import type {
   AppSettings,
-  FileResult,
   NotifyPayload,
   PersistedState,
   Quote,
@@ -31,11 +30,6 @@ const api: AppApi = {
   notify: {
     show: (payload: NotifyPayload): Promise<boolean> =>
       ipcRenderer.invoke('notify:show', payload)
-  },
-  csv: {
-    export: (content: string, filename: string): Promise<FileResult> =>
-      ipcRenderer.invoke('csv:export', content, filename),
-    import: (): Promise<FileResult> => ipcRenderer.invoke('csv:import')
   },
   app: {
     quit: (): Promise<void> => ipcRenderer.invoke('app:quit'),

@@ -1,6 +1,5 @@
 import type {
   AppSettings,
-  FileResult,
   NotifyPayload,
   PersistedState,
   Quote,
@@ -28,10 +27,6 @@ export interface AppApi {
   }
   notify: {
     show(payload: NotifyPayload): Promise<boolean>
-  }
-  csv: {
-    export(content: string, filename: string): Promise<FileResult>
-    import(): Promise<FileResult>
   }
   app: {
     quit(): Promise<void>
