@@ -28,7 +28,7 @@ export interface SnapshotCache {
   clear(): Promise<void>
 }
 
-interface MarketSource {
+export interface MarketSource {
   readonly name: string
   search(query: string): Promise<SearchHit[]>
   getQuotes(codes: string[], indexCodes?: Set<string>): Promise<Record<string, Quote>>
@@ -93,15 +93,17 @@ export class MarketDataProvider {
 
   constructor(
     private readonly cache: SnapshotCache,
-    private readonly settings: () => AppSettings
+    private readonly settings: () => AppSettings,
+    /** 可通过该参数调整主备源顺序：网页版把腾讯放在前面（东财对浏览器屏蔽个股实时价） */
+    sources?: MarketSource[]
   ) {
-    this.sources = [new EastmoneySource(), new TencentSource()]
+    this.sources = sources ?? [new EastmoneySource(), new TencentSource()]
   }
 
   private activeSources(preferred = this.settings().dataSource): MarketSource[] {
-    if (preferred === 'eastmoney') return this.sources.slice(0, 1)
-    if (preferred === 'tencent') return this.sources.slice(1)
-    return this.sources
+    if (preferred === 'auto') return this.sources
+    // 按来源名称筛选，而不是按下标，避免自定义顺序后语义错乱
+    return this.sources.filter((source) => source.name === preferred)
   }
 
   async search(query: string): Promise<SearchHit[]> {

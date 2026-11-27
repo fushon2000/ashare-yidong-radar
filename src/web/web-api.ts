@@ -10,6 +10,10 @@ import type {
 } from '../shared/types'
 import { DEFAULT_SETTINGS, DEFAULT_STATE } from '../shared/types'
 import { MarketDataProvider } from '../main/data/provider'
+import { EastmoneySource } from '../main/data/eastmoney'
+import { TencentSource } from '../main/data/tencent'
+import { searchHitFromCode } from '../main/data/symbols'
+import { inferBoard, normalizeCode } from '../shared/engine/rules'
 
 /**
  * 网页版（PWA）的 window.api 实现。
@@ -20,6 +24,14 @@ import { MarketDataProvider } from '../main/data/provider'
  * - 通知：Web Notification
  * - CSV：Blob 下载 / file input
  * - 托盘、退出等桌面专属能力：空实现
+ *
+ * 浏览器端与桌面端的接口差异（实测结论）：
+ * - 东方财富的个股实时报价对浏览器屏蔽价格字段（只返回昨收），指数正常
+ * - 腾讯 `qt.gtimg.cn` 报价在浏览器可用（CORS *、GBK 可解码、支持批量）
+ * - 东方财富日线、腾讯日线均可用
+ * - 两个搜索接口都被 CORS 拦，但腾讯 smartbox 返回 `v_hint=` 赋值，可用 script 标签 JSONP 读取
+ *
+ * 因此网页版把腾讯放在主源位置，并用 JSONP 做搜索。
  */
 
 const STATE_KEY = 'ashare-radar:state:v1'
@@ -66,7 +78,7 @@ class LocalStorageCache {
 }
 
 function mergeSettings(input?: Partial<AppSettings>): AppSettings {
-  return {
+  const merged: AppSettings = {
     ...DEFAULT_SETTINGS,
     ...(input ?? {}),
     thresholds: {
@@ -74,6 +86,9 @@ function mergeSettings(input?: Partial<AppSettings>): AppSettings {
       ...(input?.thresholds ?? {})
     }
   }
+  // 浏览器端东方财富屏蔽个股实时价，强制走「自动」（腾讯优先）
+  if (merged.dataSource === 'eastmoney') merged.dataSource = 'auto'
+  return merged
 }
 
 function readState(): PersistedState {
@@ -103,7 +118,66 @@ function writeState(state: PersistedState): void {
 
 let currentSettings: AppSettings = readState().settings
 const cache = new LocalStorageCache()
-const provider = new MarketDataProvider(cache, () => currentSettings)
+// 腾讯放在主源：浏览器端东方财富的个股实时价被屏蔽
+const provider = new MarketDataProvider(
+  cache,
+  () => currentSettings,
+  [new TencentSource(), new EastmoneySource()]
+)
+
+/**
+ * 腾讯 smartbox 搜索（JSONP）。
+ * 直接 fetch 会被 CORS 拦，但该接口返回 `v_hint="..."` 赋值语句，
+ * 用 <script charset="gbk"> 加载即可读到全局 v_hint，中文也能正确解码。
+ */
+function smartboxSearch(query: string): Promise<SearchHit[]> {
+  return new Promise((resolve) => {
+    const globalScope = window as unknown as Record<string, unknown>
+    const previous = globalScope.v_hint
+    const script = document.createElement('script')
+    let settled = false
+    const finish = (hits: SearchHit[]): void => {
+      if (settled) return
+      settled = true
+      script.remove()
+      globalScope.v_hint = previous
+      resolve(hits)
+    }
+    const timer = setTimeout(() => finish([]), 8000)
+
+    script.charset = 'gbk'
+    script.src = `https://smartbox.gtimg.cn/s3/?q=${encodeURIComponent(query.trim())}&t=all&v=2`
+    script.onerror = () => {
+      clearTimeout(timer)
+      finish([])
+    }
+    script.onload = () => {
+      clearTimeout(timer)
+      const raw = globalScope.v_hint
+      if (typeof raw !== 'string' || !raw) {
+        finish([])
+        return
+      }
+      const seen = new Set<string>()
+      const hits: SearchHit[] = []
+      for (const item of raw.split('^')) {
+        const [, code, name, , type] = item.split('~')
+        if (!code || !name) continue
+        if (type && !type.startsWith('GP-A')) continue
+        const normalized = normalizeCode(code)
+        if (!inferBoard(normalized) || seen.has(normalized)) continue
+        seen.add(normalized)
+        try {
+          hits.push(searchHitFromCode(normalized, name))
+        } catch {
+          // 不支持的板块直接跳过
+        }
+      }
+      finish(hits)
+    }
+    document.head.appendChild(script)
+  })
+}
 
 async function showNotification(payload: NotifyPayload): Promise<boolean> {
   if (typeof Notification === 'undefined') return false
@@ -175,7 +249,11 @@ function pickCsvFile(): Promise<FileResult> {
 const api: AppApi = {
   market: {
     async search(query: string): Promise<SearchHit[]> {
-      return provider.search(query)
+      const trimmed = query.trim()
+      if (!trimmed) return []
+      const hits = await smartboxSearch(trimmed)
+      // JSONP 失败时退回 provider（含 6 位代码直接构造的兜底）
+      return hits.length > 0 ? hits : provider.search(trimmed)
     },
     async getSnapshot(request): Promise<StockSnapshot> {
       if (request.settings) currentSettings = mergeSettings(request.settings)
