@@ -14,10 +14,19 @@ import {
 } from '../../shared/engine/rules'
 import { makeDemoSnapshot } from '../../shared/engine/demo'
 import { formatDateCN } from '../../shared/engine/series'
-import { FileCache } from './cache'
 import { EastmoneySource } from './eastmoney'
 import { TencentSource } from './tencent'
 import { indexInstrument } from './symbols'
+
+/**
+ * 缓存的最小契约。桌面版用 FileCache（fs），网页版用 localStorage 实现，
+ * 两者都满足这个结构，因此 provider 本身与运行平台无关。
+ */
+export interface SnapshotCache {
+  get<T>(key: string): Promise<{ fetchedAt: number; value: T } | null>
+  set<T>(key: string, value: T, fetchedAt?: number): Promise<void>
+  clear(): Promise<void>
+}
 
 interface MarketSource {
   readonly name: string
@@ -83,7 +92,7 @@ export class MarketDataProvider {
   private readonly sources: MarketSource[]
 
   constructor(
-    private readonly cache: FileCache,
+    private readonly cache: SnapshotCache,
     private readonly settings: () => AppSettings
   ) {
     this.sources = [new EastmoneySource(), new TencentSource()]

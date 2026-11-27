@@ -35,6 +35,11 @@
 > Release 附件用 ASCII 文件名，是因为 GitHub 会剥离附件名中的非 ASCII 字符；文件内容与本地构建完全一致（SHA256 见 Release 说明）。
 > 自行打包时产物默认是中文名 `A股异动雷达-1.2.0-win-x64*.{exe,zip}`，同一份文件。
 
+### 方式三：网页版（iPhone / Android / 桌面浏览器）
+
+打开 <https://fushon2000.github.io/ashare-yidong-radar/>，Safari 中点「分享 → 添加到主屏幕」即可当作 App 使用。
+同一套引擎与界面，口径与桌面版完全一致；差异（无托盘常驻、通知仅页面打开时有效等）见 [`docs/WEB.md`](docs/WEB.md)。
+
 首次运行如遇 Windows SmartScreen“未知发布者”，选择“更多信息 → 仍要运行”即可。程序未做代码签名。
 
 默认关闭窗口会最小化到系统托盘（保证提醒继续工作），从托盘菜单选择“退出”才会完全退出。

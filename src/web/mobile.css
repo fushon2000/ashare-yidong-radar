@@ -1,0 +1,432 @@
+/* ==========================================================================
+   手机端（PWA）适配层 —— 只覆盖布局，不改设计语言
+   目标设备：iPhone 15 Pro Max（430×932 CSS px），向下兼容到 360px
+   ========================================================================== */
+
+@media (max-width: 760px) {
+  :root {
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  html,
+  body {
+    overflow: hidden;
+    overscroll-behavior-y: none;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .app-root {
+    height: 100dvh;
+  }
+
+  /* ---------- 顶栏：只留品牌 + 搜索 + 刷新 ---------- */
+
+  .topbar {
+    gap: 8px;
+    height: auto;
+    min-height: calc(48px + var(--safe-top));
+    padding: var(--safe-top) 10px 0;
+    padding-top: calc(var(--safe-top) + 6px);
+    padding-bottom: 6px;
+  }
+
+  .brand {
+    min-width: 0;
+    gap: 6px;
+  }
+
+  .brand-mark {
+    width: 22px;
+    height: 22px;
+  }
+
+  .brand-copy {
+    display: none;
+  }
+
+  .search-wrap {
+    max-width: none;
+  }
+
+  .search-input {
+    height: 34px;
+    font-size: 13px;
+  }
+
+  .search-results {
+    position: fixed;
+    top: calc(var(--safe-top) + 46px);
+    left: 10px;
+    right: 10px;
+    max-height: 55dvh;
+  }
+
+  .market-pill,
+  .top-divider,
+  .data-meta,
+  .stale-chip {
+    display: none;
+  }
+
+  .top-actions {
+    gap: 2px;
+  }
+
+  .demo-chip {
+    height: 22px;
+    font-size: 10px;
+  }
+
+  .icon-button {
+    width: 34px;
+    height: 34px;
+  }
+
+  /* ---------- 主体：上下分栏 ---------- */
+
+  .workspace {
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .sidebar {
+    width: 100%;
+    min-width: 0;
+    max-height: 40dvh;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .sidebar-head {
+    padding: 8px 12px 6px;
+  }
+
+  .sidebar-title {
+    font-size: 13px;
+  }
+
+  .sidebar-sub {
+    display: none;
+  }
+
+  .tiny-icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .group-tabs {
+    padding: 0 12px;
+  }
+
+  .group-tab {
+    height: 34px;
+    font-size: 12px;
+  }
+
+  .group-actions {
+    padding: 4px 12px;
+  }
+
+  /* 触屏没有 hover，删除按钮必须常显 */
+  .watch-drag {
+    display: none;
+  }
+
+  .watch-row {
+    padding: 8px 10px 8px 10px;
+    grid-template-columns: minmax(0, 1fr) 74px 22px;
+    grid-template-areas:
+      "main quote del"
+      "minis minis del";
+  }
+
+  .row-delete {
+    color: var(--text-3);
+    width: 22px;
+    height: 28px;
+  }
+
+  .mini-badge {
+    font-size: 10.5px;
+  }
+
+  .sidebar-foot {
+    display: none;
+  }
+
+  /* ---------- 内容区 ---------- */
+
+  .main-panel {
+    padding: 10px 10px calc(16px + var(--safe-bottom));
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .detail-content {
+    gap: 10px;
+  }
+
+  .detail-head {
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    padding-bottom: 10px;
+  }
+
+  .stock-heading {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .stock-heading-line {
+    gap: 6px;
+  }
+
+  .stock-heading-line h1 {
+    font-size: 20px;
+  }
+
+  .benchmark-line {
+    gap: 6px;
+    font-size: 11px;
+  }
+
+  .price-heading {
+    align-items: flex-end;
+  }
+
+  .detail-price {
+    font-size: 24px;
+  }
+
+  .detail-change {
+    font-size: 12px;
+  }
+
+  .detail-actions {
+    order: 3;
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .warning-strip {
+    padding: 7px 10px;
+    font-size: 11px;
+  }
+
+  /* 三张偏离卡：纵向排列 */
+  .cards-grid {
+    grid-template-columns: 1fr;
+    gap: 1px;
+  }
+
+  .deviation-card {
+    padding: 11px 12px 10px;
+    gap: 6px;
+  }
+
+  .deviation-value {
+    font-size: 22px;
+  }
+
+  .deviation-meta {
+    font-size: 10.5px;
+  }
+
+  .panel {
+    padding: 11px 12px;
+  }
+
+  .section-title {
+    font-size: 15px;
+  }
+
+  .section-desc {
+    font-size: 11px;
+  }
+
+  .panel-head {
+    margin-bottom: 9px;
+    gap: 8px;
+  }
+
+  /* ---------- 模拟面板 ---------- */
+
+  .sim-body {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .number-input {
+    width: 64px;
+    height: 30px;
+  }
+
+  .range {
+    height: 4px;
+  }
+
+  .range::-webkit-slider-thumb {
+    width: 20px;
+    height: 20px;
+  }
+
+  .range-ends {
+    font-size: 9.5px;
+  }
+
+  /* ---------- 表格：横向滑动 ---------- */
+
+  .outlook-table,
+  .history-table {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .outlook-head,
+  .outlook-row {
+    grid-template-columns: 68px 76px minmax(150px, 1fr) 76px minmax(150px, 1fr) minmax(140px, 1fr);
+    min-width: 700px;
+  }
+
+  .history-head,
+  .history-row {
+    grid-template-columns: 96px 1fr 1fr 70px 70px 76px;
+    min-width: 640px;
+  }
+
+  .outlook-head,
+  .history-head {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+
+  .need-gain {
+    font-size: 12.5px;
+  }
+
+  .count-banner {
+    padding: 10px;
+  }
+
+  .count-head strong {
+    font-size: 14px;
+  }
+
+  .count-note {
+    font-size: 10px;
+    gap: 2px 10px;
+  }
+
+  .count-caveat {
+    font-size: 10px;
+  }
+
+  .forecast-footnote {
+    font-size: 10px;
+  }
+
+  /* ---------- 图表 ---------- */
+
+  .chart-wrap {
+    height: 190px;
+  }
+
+  .trend-meta {
+    display: none;
+  }
+
+  /* ---------- 弹窗 ---------- */
+
+  .modal-overlay {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .settings-modal {
+    width: 100%;
+    max-height: 100dvh;
+    border: 0;
+  }
+
+  .settings-body {
+    padding: 0 14px;
+    padding-bottom: var(--safe-bottom);
+  }
+
+  .settings-head {
+    padding: calc(var(--safe-top) + 12px) 14px 12px;
+  }
+
+  .settings-foot {
+    padding: 10px 14px calc(10px + var(--safe-bottom));
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .settings-grid,
+  .settings-grid.three {
+    grid-template-columns: 1fr;
+  }
+
+  .field-input {
+    height: 38px;
+    font-size: 13px;
+  }
+
+  .switch-row input[type="checkbox"] {
+    width: 42px;
+    height: 22px;
+  }
+
+  .switch-row input[type="checkbox"]::after {
+    width: 18px;
+    height: 18px;
+  }
+
+  .switch-row input[type="checkbox"]:checked::after {
+    left: 22px;
+  }
+
+  /* ---------- 提示 ---------- */
+
+  .toast-stack {
+    left: 10px;
+    right: 10px;
+    bottom: calc(10px + var(--safe-bottom));
+  }
+
+  .toast {
+    width: auto;
+  }
+
+  .app-footer {
+    margin-top: 12px;
+    font-size: 10px;
+  }
+
+  .date-select {
+    height: 34px;
+  }
+
+  .ghost-button.tiny {
+    height: 30px;
+  }
+}
+
+/* 更窄的机型（iPhone SE 等） */
+@media (max-width: 390px) {
+  .detail-price {
+    font-size: 22px;
+  }
+
+  .deviation-value {
+    font-size: 20px;
+  }
+
+  .outlook-head,
+  .outlook-row {
+    min-width: 660px;
+  }
+}
