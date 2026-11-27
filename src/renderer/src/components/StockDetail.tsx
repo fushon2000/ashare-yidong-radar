@@ -274,9 +274,9 @@ function SnapshotView({ snapshot }: { snapshot: StockSnapshot }): React.JSX.Elem
       )}
 
       <div className="cards-grid">
-        <DeviationCard window={3} data={displayWindows.find((item) => item.window === 3)} historical={mode === 'history'} />
-        <DeviationCard window={10} data={displayWindows.find((item) => item.window === 10)} historical={mode === 'history'} />
-        <DeviationCard window={30} data={displayWindows.find((item) => item.window === 30)} historical={mode === 'history'} />
+        <DeviationCard window={3} data={displayWindows.find((item) => item.window === 3)} historical={mode === 'history'} price={displayPrice} />
+        <DeviationCard window={10} data={displayWindows.find((item) => item.window === 10)} historical={mode === 'history'} price={displayPrice} />
+        <DeviationCard window={30} data={displayWindows.find((item) => item.window === 30)} historical={mode === 'history'} price={displayPrice} />
       </div>
 
       {mode === 'live' && (
@@ -289,7 +289,7 @@ function SnapshotView({ snapshot }: { snapshot: StockSnapshot }): React.JSX.Elem
       )}
 
       {mode === 'live' ? (
-        <OutlookTable outlook={outlook} boardName={boardLabel(snapshot.instrument.board)} />
+        <OutlookTable outlook={outlook} boardName={boardLabel(snapshot.instrument.board)} currentPrice={displayPrice} />
       ) : (
         <HistoryPanel
           review={review}

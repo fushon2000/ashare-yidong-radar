@@ -5,9 +5,11 @@ interface Props {
   window: 3 | 10 | 30
   data?: WindowDeviation
   historical?: boolean
+  /** 当前价（实时模式）或当时收盘价（复盘模式），显示在百分比下方 */
+  price?: number | null
 }
 
-export function DeviationCard({ window, data, historical = false }: Props): React.JSX.Element {
+export function DeviationCard({ window, data, historical = false, price }: Props): React.JSX.Element {
   const label = window === 3 ? '3 日偏离' : window === 10 ? '10 日偏离' : '30 日偏离'
   const kind = window === 3 ? '常规异动' : '严重异动'
   const utilization = data ? Math.min(1, Math.max(0, data.utilization)) : 0
@@ -35,6 +37,11 @@ export function DeviationCard({ window, data, historical = false }: Props): Reac
         <span className="deviation-threshold">阈值 {data ? fmtPctPlain(data.threshold) : '--'}</span>
       </div>
 
+      <div className="deviation-prices">
+        <span>{historical ? '当时价' : '现价'} ¥{price !== undefined && price !== null ? fmtPrice(price) : '--'}</span>
+        <span>{historical ? '当时触发价' : '触发价'} ¥{data ? fmtPrice(data.triggerPrice) : '--'}</span>
+      </div>
+
       <div className="progress-track" title={data ? `当前 ${fmtPct(data.deviation)} / 阈值 ${fmtPctPlain(data.threshold)}` : '数据不足'}>
         <span className={`progress-fill ${tone}`} style={{ width: `${utilization * 100}%` }} />
         {data && data.utilization > 1 && <span className="progress-over" />}
@@ -42,7 +49,6 @@ export function DeviationCard({ window, data, historical = false }: Props): Reac
 
       <div className="deviation-meta">
         <span>{danger ? '已触发' : gap !== null ? `还差 ${gap.toFixed(2)} 个百分点` : '数据不足'}</span>
-        <span>{historical ? '当时窗口触发价' : '当前窗口触发价'} {data ? fmtPrice(data.triggerPrice) : '--'}</span>
       </div>
 
       {data && (
