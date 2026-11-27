@@ -1,5 +1,50 @@
 # 验收记录
 
+## 网页版 / PWA（2026-11-27）
+
+同一套引擎与渲染层，额外构建出可在 iPhone / Android / 桌面浏览器使用的网页版。
+
+- 在线地址：<https://fushon2000.github.io/ashare-yidong-radar/>
+- 部署方式：本地构建 `dist-web` → 推送 `gh-pages` 分支 → GitHub Pages 自动发布
+- CI 配置暂存于 `docs/deploy/pages.yml`（当前 PAT 缺 `workflow` 权限，无法提交 `.github/workflows/`，故改用分支部署）
+
+### 实现
+
+- `src/web/` 提供入口、浏览器版 `window.api`、手机布局与 PWA 资源，渲染层与引擎零改动
+- `MarketDataProvider` 抽出 `SnapshotCache` 接口并支持自定义源顺序，桌面用文件缓存 + 东财优先，网页用 localStorage + 腾讯优先
+
+### 浏览器端接口实测
+
+| 接口 | 结论 |
+|---|---|
+| 东方财富个股实时报价 | ❌ 价格字段被屏蔽（`f2` 恒为 0，仅昨收正常） |
+| 东方财富指数报价 | ❌ 偶发跨域失败 |
+| 东方财富日线 | ✅ 可用 |
+| 腾讯报价 / 日线 | ✅ 可用（CORS `*`、GBK 可解码、支持批量） |
+| 东方财富搜索 | ❌ 跨域被拦 |
+| 腾讯 smartbox 搜索 | ✅ 用 `<script charset="gbk">` 读 `v_hint` 可行 |
+
+### 验证
+
+- `tsc --noEmit` 通过；`vitest run` 35 项通过（+7 项联网用例默认跳过）
+- 网页版构建：JS 1.39MB（gzip 468KB）+ CSS 38KB + 字体 76KB
+- iPhone 15 Pro Max 视口（430×932）无头 Edge 实测：**页面无横向溢出、控制台零报错**
+- 线上地址实测：首页 / manifest / sw.js / 图标全部 HTTP 200，`Service Worker` 可用
+- 线上真实行情：贵州茅台 1469.00 −0.40%，基准 000002 +0.01%，3/10/30 日偏离 +3.83% / +9.05% / +18.09%，数据源标记 `tencent`
+- 截图：`docs/screenshots/web-live-iphone.png`、`web-live-outlook.png`、`web-iphone-*.png`
+
+> 与桌面版数值的极小幅差异（约 0.02pp）来自腾讯日线用收盘价反推涨跌幅，
+> 桌面版用东财返回的两位小数涨跌幅字段；口径一致，差异属取整范围。
+
+### 网页版已知差异
+
+- 无托盘常驻，页面关闭后不再计算与提醒
+- 通知依赖页面打开 + 用户授权（iOS 首次点击页面时申请）
+- 触屏无法拖动排序关注池
+- 「关闭窗口最小化到托盘」设置项在网页版无效
+
+---
+
 ## v1.2.0 交付（2026-11-27）
 
 版本 1.2.0 = v1.1 的口径变更 + v1.2 的界面重做，并**首次完成打包与真机 GUI 冒烟**。
