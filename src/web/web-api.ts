@@ -1,7 +1,6 @@
 import type { AppApi } from '../shared/api'
 import type {
   AppSettings,
-  FileResult,
   NotifyPayload,
   PersistedState,
   Quote,
@@ -22,7 +21,6 @@ import { inferBoard, normalizeCode } from '../shared/engine/rules'
  * - 缓存：localStorage（桌面版是文件）
  * - 状态：localStorage
  * - 通知：Web Notification
- * - CSV：Blob 下载 / file input
  * - 托盘、退出等桌面专属能力：空实现
  *
  * 浏览器端与桌面端的接口差异（实测结论）：
@@ -96,10 +94,16 @@ function readState(): PersistedState {
     const raw = localStorage.getItem(STATE_KEY)
     if (!raw) return DEFAULT_STATE
     const parsed = JSON.parse(raw) as PersistedState
+    // 旧数据可能含已删除的 groups / groupId：一律忽略，按 code 去重保留股票。
+    const seen = new Set<string>()
+    const stocks = (parsed.stocks ?? []).filter((stock) => {
+      if (!stock || typeof stock.code !== 'string' || seen.has(stock.code)) return false
+      seen.add(stock.code)
+      return true
+    })
     return {
       version: DEFAULT_STATE.version,
-      groups: parsed.groups?.length ? parsed.groups : DEFAULT_STATE.groups,
-      stocks: parsed.stocks ?? [],
+      stocks,
       selectedCode: parsed.selectedCode ?? null,
       settings: mergeSettings(parsed.settings)
     }
@@ -198,54 +202,6 @@ async function showNotification(payload: NotifyPayload): Promise<boolean> {
   }
 }
 
-function downloadCsv(content: string, filename: string): FileResult {
-  const blob = new Blob([content], { type: 'text/csv;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = filename || '关注池.csv'
-  document.body.appendChild(link)
-  link.click()
-  link.remove()
-  setTimeout(() => URL.revokeObjectURL(url), 10_000)
-  return { canceled: false, path: filename }
-}
-
-function pickCsvFile(): Promise<FileResult> {
-  return new Promise((resolve) => {
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = '.csv,text/csv'
-    input.style.display = 'none'
-    let settled = false
-    const finish = (result: FileResult): void => {
-      if (settled) return
-      settled = true
-      input.remove()
-      resolve(result)
-    }
-    input.addEventListener('change', () => {
-      const file = input.files?.[0]
-      if (!file) {
-        finish({ canceled: true })
-        return
-      }
-      const reader = new FileReader()
-      reader.onload = () => finish({ canceled: false, content: String(reader.result ?? '') })
-      reader.onerror = () => finish({ canceled: true })
-      reader.readAsText(file, 'utf-8')
-    })
-    // iOS 取消选择时不会触发 change，用窗口重新聚焦兜底
-    window.addEventListener(
-      'focus',
-      () => setTimeout(() => finish({ canceled: true }), 1500),
-      { once: true }
-    )
-    document.body.appendChild(input)
-    input.click()
-  })
-}
-
 const api: AppApi = {
   market: {
     async search(query: string): Promise<SearchHit[]> {
@@ -285,14 +241,6 @@ const api: AppApi = {
   },
   notify: {
     show: showNotification
-  },
-  csv: {
-    async export(content: string, filename: string): Promise<FileResult> {
-      return downloadCsv(content, filename)
-    },
-    async import(): Promise<FileResult> {
-      return pickCsvFile()
-    }
   },
   app: {
     async quit(): Promise<void> {

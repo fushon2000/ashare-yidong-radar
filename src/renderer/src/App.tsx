@@ -24,7 +24,7 @@ export default function App(): React.JSX.Element {
       <div className="boot-screen">
         <LogoMark />
         <div className="boot-title">A股异动雷达</div>
-        <div className="boot-sub">正在读取关注池与本地设置…</div>
+        <div className="boot-sub">正在读取本地设置…</div>
         <div className="boot-bar"><span /></div>
       </div>
     )

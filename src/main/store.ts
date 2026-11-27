@@ -11,28 +11,20 @@ function clone<T>(value: T): T {
 function normalizeState(input: Partial<PersistedState> | null): PersistedState {
   const base = clone(DEFAULT_STATE)
   if (!input || typeof input !== 'object') return base
-  const groups = Array.isArray(input.groups) && input.groups.length > 0
-    ? input.groups
-        .filter((group) => group && typeof group.id === 'string' && typeof group.name === 'string')
-        .map((group, index) => ({
-          id: group.id,
-          name: group.name,
-          order: Number.isFinite(group.order) ? group.order : index
-        }))
-    : base.groups
-  const groupIds = new Set(groups.map((group) => group.id))
+  // 旧数据可能含已删除的 groups / groupId：一律忽略，按 code 去重保留股票。
+  const seen = new Set<string>()
   const stocks = Array.isArray(input.stocks)
     ? input.stocks
         .filter((stock) =>
           stock &&
           typeof stock.code === 'string' &&
           isSupportedCode(stock.code) &&
-          groupIds.has(stock.groupId)
+          !seen.has(stock.code) &&
+          seen.add(stock.code)
         )
         .map((stock, index) => ({
           code: stock.code,
           name: typeof stock.name === 'string' ? stock.name : stock.code,
-          groupId: stock.groupId,
           order: Number.isFinite(stock.order) ? stock.order : index,
           note: typeof stock.note === 'string' ? stock.note : undefined
         }))
@@ -47,7 +39,6 @@ function normalizeState(input: Partial<PersistedState> | null): PersistedState {
   }
   return {
     version: 1,
-    groups: groups.sort((a, b) => a.order - b.order),
     stocks,
     selectedCode: typeof input.selectedCode === 'string' ? input.selectedCode : null,
     settings

@@ -259,30 +259,15 @@ export interface AppSettings {
 export interface StockEntry {
   code: string
   name: string
-  groupId: string
   order: number
   note?: string
 }
 
-export interface StockGroup {
-  id: string
-  name: string
-  order: number
-}
-
 export interface PersistedState {
   version: number
-  groups: StockGroup[]
   stocks: StockEntry[]
   selectedCode: string | null
   settings: AppSettings
-}
-
-export interface CsvRow {
-  group: string
-  code: string
-  name: string
-  note: string
 }
 
 export interface NotifyPayload {
@@ -323,7 +308,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
 
 export const DEFAULT_STATE: PersistedState = {
   version: 2,
-  groups: [{ id: 'default', name: '默认分组', order: 0 }],
   stocks: [],
   selectedCode: null,
   settings: DEFAULT_SETTINGS

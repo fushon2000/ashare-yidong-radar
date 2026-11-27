@@ -14,13 +14,11 @@ import type {
   PersistedState,
   SearchHit,
   StockEntry,
-  StockGroup,
   StockSnapshot,
   WindowDeviation
 } from '../../../shared/types'
 import { DEFAULT_SETTINGS, DEFAULT_STATE } from '../../../shared/types'
 import {
-  buildInstrument,
   normalizeCode,
   severeCountFor,
   thresholdSetFor
@@ -66,11 +64,9 @@ export interface StockMetric {
 
 interface AppContextValue {
   ready: boolean
-  groups: StockGroup[]
   stocks: StockEntry[]
   settings: AppSettings
   selectedCode: string | null
-  activeGroupId: string
   views: Record<string, StockView>
   metrics: Record<string, StockMetric>
   simulation: SimulationState
@@ -84,12 +80,7 @@ interface AppContextValue {
   addStock(hit: SearchHit): void
   removeStock(code: string): void
   selectStock(code: string): void
-  createGroup(name: string): void
-  renameGroup(id: string, name: string): void
-  deleteGroup(id: string): void
-  moveStockToGroup(code: string, groupId: string): void
   reorderStock(code: string, targetCode: string | null): void
-  setActiveGroup(id: string): void
   updateSettings(next: Partial<AppSettings>): void
   resetSettings(): void
   setSimulation(next: Partial<SimulationState>): void
@@ -102,8 +93,6 @@ interface AppContextValue {
   refreshAll(silent?: boolean): Promise<void>
   loadSnapshot(code: string, options?: { demo?: boolean; forceRefresh?: boolean; settings?: AppSettings }): Promise<void>
   loadDemoWatchlist(): Promise<void>
-  exportCsv(): Promise<void>
-  importCsv(): Promise<void>
   dismissAllToasts(): void
 }
 
@@ -121,8 +110,6 @@ function mergeSettings(input?: Partial<AppSettings>): AppSettings {
 }
 
 function normalizeState(state: PersistedState): PersistedState {
-  const groups = state.groups?.length ? state.groups : DEFAULT_STATE.groups
-  const ids = new Set(groups.map((group) => group.id))
   const settings = mergeSettings(state.settings)
   const savedVersion = typeof state.version === 'number' ? state.version : 1
   if (savedVersion < 2 && settings.thresholds.st3 === 12) {
@@ -130,32 +117,31 @@ function normalizeState(state: PersistedState): PersistedState {
     // 新《交易规则》将主板 ST 涨跌幅放宽到 ±10%，对应异常波动阈值同步为 20%。
     settings.thresholds = { ...settings.thresholds, st3: 20 }
   }
+  // 旧数据可能含已删除的 groups / groupId：一律忽略，按 code 去重保留股票。
+  const seen = new Set<string>()
+  const stocks = (state.stocks ?? []).filter((stock) => {
+    if (!stock || typeof stock.code !== 'string' || seen.has(stock.code)) return false
+    seen.add(stock.code)
+    return true
+  }).map((stock, index) => ({
+    code: stock.code,
+    name: typeof stock.name === 'string' ? stock.name : stock.code,
+    order: Number.isFinite(stock.order) ? stock.order : index,
+    note: typeof stock.note === 'string' ? stock.note : undefined
+  }))
   return {
     version: DEFAULT_STATE.version,
-    groups,
-    stocks: (state.stocks ?? []).filter((stock) => ids.has(stock.groupId)),
+    stocks,
     selectedCode: state.selectedCode ?? null,
     settings
   }
 }
 
-function nextGroupId(groups: StockGroup[]): string {
-  let index = groups.length + 1
-  let id = `group-${index}`
-  while (groups.some((group) => group.id === id)) {
-    index += 1
-    id = `group-${index}`
-  }
-  return id
-}
-
 export function AppProvider({ children }: { children: ReactNode }): React.JSX.Element {
   const [ready, setReady] = useState(false)
-  const [groups, setGroups] = useState<StockGroup[]>(DEFAULT_STATE.groups)
   const [stocks, setStocks] = useState<StockEntry[]>([])
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
   const [selectedCode, setSelectedCode] = useState<string | null>(null)
-  const [activeGroupId, setActiveGroupId] = useState('default')
   const [views, setViews] = useState<Record<string, StockView>>({})
   const [simulation, setSimulationState] = useState<SimulationState>({
     todayPct: null,
@@ -297,11 +283,9 @@ export function AppProvider({ children }: { children: ReactNode }): React.JSX.El
       try {
         const state = normalizeState(await window.api.state.load())
         if (cancelled) return
-        setGroups(state.groups)
         setStocks(state.stocks)
         setSettings(state.settings)
         setSelectedCode(state.selectedCode ?? state.stocks[0]?.code ?? null)
-        setActiveGroupId(state.groups[0]?.id ?? 'default')
         setReady(true)
       } catch (error) {
         if (!cancelled) {
@@ -338,7 +322,6 @@ export function AppProvider({ children }: { children: ReactNode }): React.JSX.El
     const timer = setTimeout(() => {
       const state: PersistedState = {
         version: 1,
-        groups,
         stocks,
         selectedCode,
         settings
@@ -346,7 +329,7 @@ export function AppProvider({ children }: { children: ReactNode }): React.JSX.El
       void window.api.state.save(state).catch(() => undefined)
     }, 350)
     return () => clearTimeout(timer)
-  }, [ready, groups, stocks, selectedCode, settings])
+  }, [ready, stocks, selectedCode, settings])
 
   // Quote polling.
   useEffect(() => {
@@ -440,17 +423,13 @@ export function AppProvider({ children }: { children: ReactNode }): React.JSX.El
       setSelectedCode(code)
       setMode('live')
       setHistoryDateState(null)
-      toast(`${hit.name} 已在关注池中`, 'info')
+      toast(`${hit.name} 已在列表中`, 'info')
       return
     }
-    const groupId = groups.some((group) => group.id === activeGroupId)
-      ? activeGroupId
-      : groups[0]?.id ?? 'default'
-    const maxOrder = Math.max(-1, ...stocksRef.current.filter((stock) => stock.groupId === groupId).map((stock) => stock.order))
+    const maxOrder = Math.max(-1, ...stocksRef.current.map((stock) => stock.order))
     const entry: StockEntry = {
       code,
       name: hit.name,
-      groupId,
       order: maxOrder + 1
     }
     setStocks((current) => [...current, entry])
@@ -459,7 +438,7 @@ export function AppProvider({ children }: { children: ReactNode }): React.JSX.El
     setHistoryDateState(null)
     void loadSnapshot(code)
     toast(`已添加 ${hit.name}`, 'success')
-  }, [activeGroupId, groups, loadSnapshot, toast])
+  }, [loadSnapshot, toast])
 
   const removeStock = useCallback((code: string) => {
     const next = stocksRef.current.filter((stock) => stock.code !== code)
@@ -474,7 +453,7 @@ export function AppProvider({ children }: { children: ReactNode }): React.JSX.El
       setMode('live')
       setHistoryDateState(null)
     }
-    toast('已从关注池移除', 'info')
+    toast('已移除', 'info')
   }, [toast])
 
   const selectStock = useCallback((code: string) => {
@@ -487,61 +466,19 @@ export function AppProvider({ children }: { children: ReactNode }): React.JSX.El
     }
   }, [loadSnapshot])
 
-  const createGroup = useCallback((name: string) => {
-    const clean = name.trim() || '新分组'
-    const group: StockGroup = {
-      id: nextGroupId(groups),
-      name: clean,
-      order: groups.length
-    }
-    setGroups((current) => [...current, group])
-    setActiveGroupId(group.id)
-    toast(`已创建分组“${clean}”`, 'success')
-  }, [groups, toast])
-
-  const renameGroup = useCallback((id: string, name: string) => {
-    const clean = name.trim()
-    if (!clean) return
-    setGroups((current) => current.map((group) => group.id === id ? { ...group, name: clean } : group))
-  }, [])
-
-  const deleteGroup = useCallback((id: string) => {
-    if (groups.length <= 1) {
-      toast('至少保留一个分组', 'error')
-      return
-    }
-    const remaining = groups.filter((group) => group.id !== id)
-    const fallback = remaining[0]
-    setGroups(remaining)
-    setStocks((current) => current.map((stock) =>
-      stock.groupId === id ? { ...stock, groupId: fallback.id } : stock
-    ))
-    if (activeGroupId === id) setActiveGroupId(fallback.id)
-  }, [activeGroupId, groups, toast])
-
-  const moveStockToGroup = useCallback((code: string, groupId: string) => {
-    setStocks((current) => {
-      const maxOrder = Math.max(-1, ...current.filter((stock) => stock.groupId === groupId).map((stock) => stock.order))
-      return current.map((stock) => stock.code === code
-        ? { ...stock, groupId, order: maxOrder + 1 }
-        : stock)
-    })
-    setActiveGroupId(groupId)
-  }, [])
-
   const reorderStock = useCallback((code: string, targetCode: string | null) => {
     setStocks((current) => {
       const moving = current.find((stock) => stock.code === code)
       if (!moving) return current
-      const groupStocks = current
-        .filter((stock) => stock.groupId === moving.groupId && stock.code !== code)
+      const rest = current
+        .filter((stock) => stock.code !== code)
         .sort((a, b) => a.order - b.order)
       const targetIndex = targetCode
-        ? groupStocks.findIndex((stock) => stock.code === targetCode)
-        : groupStocks.length
-      const insertAt = targetIndex < 0 ? groupStocks.length : targetIndex
-      groupStocks.splice(insertAt, 0, moving)
-      const orderMap = new Map(groupStocks.map((stock, index) => [stock.code, index]))
+        ? rest.findIndex((stock) => stock.code === targetCode)
+        : rest.length
+      const insertAt = targetIndex < 0 ? rest.length : targetIndex
+      rest.splice(insertAt, 0, moving)
+      const orderMap = new Map(rest.map((stock, index) => [stock.code, index]))
       return current.map((stock) =>
         orderMap.has(stock.code) ? { ...stock, order: orderMap.get(stock.code)! } : stock
       )
@@ -600,14 +537,12 @@ export function AppProvider({ children }: { children: ReactNode }): React.JSX.El
       { code: '300750', name: '宁德时代' },
       { code: '688981', name: '中芯国际' }
     ]
-    const groupId = groups[0]?.id ?? 'default'
     const existing = new Set(stocksRef.current.map((stock) => stock.code))
     const additions = demoStocks
       .filter((item) => !existing.has(item.code))
       .map((item, index) => ({
         code: item.code,
         name: item.name,
-        groupId,
         order: stocksRef.current.length + index
       }))
     if (additions.length > 0) {
@@ -618,114 +553,13 @@ export function AppProvider({ children }: { children: ReactNode }): React.JSX.El
       await loadSnapshot(item.code, { demo: true })
     }
     toast('已载入演示数据，仅用于体验界面', 'info')
-  }, [groups, loadSnapshot, toast])
-
-  const exportCsv = useCallback(async () => {
-    const header = '分组,代码,名称,备注'
-    const lines = [header]
-    const sorted = [...stocksRef.current].sort((a, b) => a.order - b.order)
-    for (const stock of sorted) {
-      const group = groups.find((item) => item.id === stock.groupId)?.name ?? ''
-      const escape = (value: string): string => `"${value.replace(/"/g, '""')}"`
-      lines.push([escape(group), escape(stock.code), escape(stock.name), escape(stock.note ?? '')].join(','))
-    }
-    const result = await window.api.csv.export(`\uFEFF${lines.join('\r\n')}`, '关注池.csv')
-    if (!result.canceled) toast('关注池已导出', 'success')
-  }, [groups, toast])
-
-  const importCsv = useCallback(async () => {
-    const result = await window.api.csv.import()
-    if (result.canceled || !result.content) return
-    const text = result.content.replace(/^\uFEFF/, '')
-    const rows: string[][] = []
-    let current = ''
-    let cell = ''
-    let quoted = false
-    for (let i = 0; i < text.length; i++) {
-      const char = text[i]
-      if (quoted) {
-        if (char === '"' && text[i + 1] === '"') {
-          cell += '"'
-          i++
-        } else if (char === '"') {
-          quoted = false
-        } else {
-          cell += char
-        }
-      } else if (char === '"') {
-        quoted = true
-      } else if (char === ',') {
-        current += `${cell}\u0000`
-        cell = ''
-      } else if (char === '\n') {
-        current += cell
-        rows.push(current.split('\u0000'))
-        current = ''
-        cell = ''
-      } else if (char !== '\r') {
-        cell += char
-      }
-    }
-    if (cell || current) {
-      current += cell
-      rows.push(current.split('\u0000'))
-    }
-    if (rows.length < 2) {
-      toast('CSV 内容为空', 'error')
-      return
-    }
-    const header = rows[0].map((item) => item.trim())
-    const codeIndex = header.findIndex((item) => item.includes('代码'))
-    const nameIndex = header.findIndex((item) => item.includes('名称'))
-    const groupIndex = header.findIndex((item) => item.includes('分组'))
-    const noteIndex = header.findIndex((item) => item.includes('备注'))
-    if (codeIndex < 0) {
-      toast('CSV 缺少“代码”列', 'error')
-      return
-    }
-    const nextGroups = [...groups]
-    const nextStocks = [...stocksRef.current]
-    let added = 0
-    for (const row of rows.slice(1)) {
-      const rawCode = row[codeIndex]?.trim()
-      if (!rawCode) continue
-      const code = normalizeCode(rawCode)
-      try {
-        const instrument = buildInstrument(code, row[nameIndex] ?? code, settingsRef.current)
-        if (nextStocks.some((stock) => stock.code === code)) continue
-        const groupName = row[groupIndex]?.trim() || '导入分组'
-        let group = nextGroups.find((item) => item.name === groupName)
-        if (!group) {
-          group = { id: nextGroupId(nextGroups), name: groupName, order: nextGroups.length }
-          nextGroups.push(group)
-        }
-        nextStocks.push({
-          code,
-          name: instrument.name,
-          groupId: group.id,
-          order: nextStocks.length,
-          note: noteIndex >= 0 ? row[noteIndex]?.trim() : undefined
-        })
-        added++
-      } catch {
-        // skip unsupported rows
-      }
-    }
-    setGroups(nextGroups)
-    setStocks(nextStocks)
-    toast(added > 0 ? `已导入 ${added} 只股票` : '没有新增股票', added > 0 ? 'success' : 'info')
-    for (const stock of nextStocks) {
-      if (!viewsRef.current[stock.code]?.snapshot) void loadSnapshot(stock.code)
-    }
-  }, [groups, loadSnapshot, toast])
+  }, [loadSnapshot, toast])
 
   const value: AppContextValue = {
     ready,
-    groups,
     stocks,
     settings,
     selectedCode,
-    activeGroupId,
     views,
     metrics,
     simulation,
@@ -739,12 +573,7 @@ export function AppProvider({ children }: { children: ReactNode }): React.JSX.El
     addStock,
     removeStock,
     selectStock,
-    createGroup,
-    renameGroup,
-    deleteGroup,
-    moveStockToGroup,
     reorderStock,
-    setActiveGroup: setActiveGroupId,
     updateSettings,
     resetSettings,
     setSimulation,
@@ -757,8 +586,6 @@ export function AppProvider({ children }: { children: ReactNode }): React.JSX.El
     refreshAll,
     loadSnapshot,
     loadDemoWatchlist,
-    exportCsv,
-    importCsv,
     dismissAllToasts: () => setToasts([])
   }
 
