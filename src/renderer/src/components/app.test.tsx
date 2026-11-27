@@ -84,7 +84,7 @@ describe('app shell', () => {
       expect(screen.getAllByText('贵州茅台').length).toBeGreaterThan(0)
     }, { timeout: 5000 })
     expect(screen.getAllByText('10 日偏离').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('当日 / 第二日 / 第三日 触发测算').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('当日 / 第二日 / 第三日 / 第四日 / 第五日 触发测算').length).toBeGreaterThan(0)
     expect(screen.getAllByText('10 日内同向异动').length).toBeGreaterThan(0)
     expect(screen.getByText('盘中拖动模拟')).toBeTruthy()
   })

@@ -198,8 +198,8 @@ export interface OutlookCountCell {
 }
 
 export interface OutlookDay {
-  /** 0 = 当日，1 = 第二日，2 = 第三日 */
-  day: 0 | 1 | 2
+  /** 0 = 当日，1 = 第二日，2 = 第三日，3 = 第四日，4 = 第五日 */
+  day: 0 | 1 | 2 | 3 | 4
   label: string
   /** 该时点窗口滚动后的日期（未来日期未知，仅当日有真实日期） */
   date: string | null

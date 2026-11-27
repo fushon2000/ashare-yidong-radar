@@ -97,7 +97,7 @@ describe('10 日内同向异动次数', () => {
   })
 })
 
-describe('当日 / 第二日 / 第三日 测算', () => {
+describe('当日 / 第二日 / 第三日 / 第四日 / 第五日 测算', () => {
   it('needs +100% to reach the 10-day 100% threshold from a flat base', () => {
     const solved = solveNeedUp(seriesOf(flat(40)), 10, 0, 100)!
     expect(solved.needUpPct).toBeCloseTo(100, 6)
@@ -154,7 +154,7 @@ describe('当日 / 第二日 / 第三日 测算', () => {
 })
 
 describe('buildOutlook 输出', () => {
-  it('returns three time points with deviation, required gain and price', () => {
+  it('returns five time points with deviation, required gain and price', () => {
     const series = seriesOf(flat(45))
     const result = buildOutlook({
       series,
@@ -163,7 +163,7 @@ describe('buildOutlook 输出', () => {
       currentPrice: 100,
       countRequired: 4
     })
-    expect(result.days.map((day) => day.label)).toEqual(['当日', '第二日', '第三日'])
+    expect(result.days.map((day) => day.label)).toEqual(['当日', '第二日', '第三日', '第四日', '第五日'])
     expect(result.days[0].date).toBe(series[series.length - 1].date)
     expect(result.days[1].date).toBeNull()
     expect(result.days[0].budgetPct).toBeCloseTo(10, 6)

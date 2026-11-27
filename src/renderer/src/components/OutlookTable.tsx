@@ -85,7 +85,7 @@ export function OutlookTable({ outlook, boardName }: Props): React.JSX.Element {
     <section className="panel outlook-panel">
       <div className="panel-head">
         <div>
-          <h2 className="section-title">当日 / 第二日 / 第三日 触发测算</h2>
+          <h2 className="section-title">当日 / 第二日 / 第三日 / 第四日 / 第五日 触发测算</h2>
           <p className="section-desc">
             「再涨」指相对现价、到该时点收盘累计还需上涨的幅度；基准指数未来按 0% 处理。
           </p>
@@ -165,7 +165,7 @@ export function OutlookTable({ outlook, boardName }: Props): React.JSX.Element {
 
       <div className="forecast-footnote">
         <span>「再涨」不是「阈值 − 当前偏离值」：再涨的百分比乘在已膨胀的基期上。</span>
-        <span>到第二日、第三日，最早的交易日会滑出窗口，所需涨幅可能变大也可能变小。</span>
+        <span>到第二日、第三日、第四日、第五日，最早的交易日会滑出窗口，所需涨幅可能变大也可能变小。</span>
         <span>「额度」是该时点的涨跌幅上限；超出即该时点无法实现，但仍给出所需幅度供参考。</span>
         <span>次数型前推假设剩余交易日涨幅均匀分配。</span>
       </div>

@@ -47,7 +47,7 @@ function EmptyDetail(): React.JSX.Element {
       </div>
       <h2>{totalStocks === 0 ? '把第一只股票加入关注池' : '选择左侧股票开始'}</h2>
       <p>
-        计算 3 / 10 / 30 日滚动偏离值，并给出当日、第二日、第三日
+        计算 3 / 10 / 30 日滚动偏离值，并给出当日、第二日、第三日、第四日、第五日
         「再涨多少触发严重异动」的测算与 10 日内同向异动次数。
       </p>
       <div className="empty-actions">
