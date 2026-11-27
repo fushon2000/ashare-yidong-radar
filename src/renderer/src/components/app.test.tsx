@@ -82,6 +82,9 @@ describe('app shell', () => {
     expect(screen.getAllByText('当日 / 第二日 / 第三日 / 第四日 / 第五日 触发测算').length).toBeGreaterThan(0)
     expect(screen.getAllByText('10 日内同向异动').length).toBeGreaterThan(0)
     expect(screen.getByText('盘中拖动模拟')).toBeTruthy()
+    // 偏离值下方补齐现价与触发价：三张卡片各一行，测算表头也写明现价
+    expect(screen.getAllByText(/现价 ¥/).length).toBeGreaterThanOrEqual(3)
+    expect(screen.getAllByText(/触发价 ¥/).length).toBeGreaterThan(0)
   })
 
   it('switches to simulation when the today slider moves', async () => {

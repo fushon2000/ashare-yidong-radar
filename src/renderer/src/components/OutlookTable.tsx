@@ -4,6 +4,8 @@ import { fmtPct, fmtPctPlain, fmtPrice, statusClass } from '../../../shared/engi
 interface Props {
   outlook: OutlookResult
   boardName: string
+  /** 当前价，「再涨」均相对该价；各时点触发价显示在偏离值下方 */
+  currentPrice: number
 }
 
 const MODE_LABEL: Record<string, string> = {
@@ -74,7 +76,7 @@ function CountNeed({ day }: { day: OutlookDay }): React.JSX.Element {
   )
 }
 
-export function OutlookTable({ outlook, boardName }: Props): React.JSX.Element {
+export function OutlookTable({ outlook, boardName, currentPrice }: Props): React.JSX.Element {
   const { countState, days } = outlook
   const ratio = countState.required > 0
     ? Math.min(100, (countState.count / countState.required) * 100)
@@ -87,7 +89,7 @@ export function OutlookTable({ outlook, boardName }: Props): React.JSX.Element {
         <div>
           <h2 className="section-title">当日 / 第二日 / 第三日 / 第四日 / 第五日 触发测算</h2>
           <p className="section-desc">
-            「再涨」指相对现价、到该时点收盘累计还需上涨的幅度；基准指数未来按 0% 处理。
+            现价 ¥{fmtPrice(currentPrice)}；「再涨」指相对现价、到该时点收盘累计还需上涨的幅度；基准指数未来按 0% 处理。
           </p>
         </div>
         <div className="forecast-legend">
@@ -141,7 +143,9 @@ export function OutlookTable({ outlook, boardName }: Props): React.JSX.Element {
                 <strong className={ten ? statusClass(ten.deviationAt) : ''}>
                   {ten ? fmtPct(ten.deviationAt) : '--'}
                 </strong>
-                <span>{day.day === 0 ? '当前水平' : '窗口滚动后'}</span>
+                <span className="dev-trigger">
+                  {ten ? (ten.triggered ? '已触发' : ten.targetPrice !== null ? `触发价 ¥${fmtPrice(ten.targetPrice)}` : '该时点无法触发') : '--'}
+                </span>
               </div>
               <div className="outlook-need">
                 {ten ? <SevereNeed cell={ten} day={day.day} /> : <span className="impossible">数据不足</span>}
@@ -150,7 +154,9 @@ export function OutlookTable({ outlook, boardName }: Props): React.JSX.Element {
                 <strong className={thirty ? statusClass(thirty.deviationAt) : ''}>
                   {thirty ? fmtPct(thirty.deviationAt) : '--'}
                 </strong>
-                <span>{day.day === 0 ? '当前水平' : '窗口滚动后'}</span>
+                <span className="dev-trigger">
+                  {thirty ? (thirty.triggered ? '已触发' : thirty.targetPrice !== null ? `触发价 ¥${fmtPrice(thirty.targetPrice)}` : '该时点无法触发') : '--'}
+                </span>
               </div>
               <div className="outlook-need">
                 {thirty ? <SevereNeed cell={thirty} day={day.day} /> : <span className="impossible">数据不足</span>}

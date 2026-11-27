@@ -1204,6 +1204,14 @@ summary:focus-visible {
   color: var(--text-4);
 }
 
+.deviation-prices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 11px;
+  color: var(--text-3);
+}
+
 .progress-track {
   position: relative;
   height: 3px;
@@ -1682,6 +1690,10 @@ summary:focus-visible {
 .outlook-dev span {
   font-size: 10px;
   color: var(--text-4);
+}
+
+.outlook-dev .dev-trigger {
+  color: var(--text-3);
 }
 
 .outlook-need {
