@@ -7,7 +7,26 @@
 | Windows 便携版 | Windows 10/11 x64 | `pnpm build && pnpm package:win` |
 | 网页版 / PWA | iPhone Safari、Android Chrome、桌面浏览器 | `pnpm build:web` |
 
-在线地址：<https://fushon2000.github.io/ashare-yidong-radar/>（GitHub Pages 自动部署）
+在线地址：<https://fushon2000.github.io/ashare-yidong-radar/>
+
+## 部署
+
+**主路径：GitHub Actions 自动部署**
+
+推送到 `main` 后由 `.github/workflows/pages.yml` 自动执行：
+
+1. `pnpm install --frozen-lockfile`（`ELECTRON_SKIP_BINARY_DOWNLOAD=1` 跳过 Electron 二进制）
+2. `pnpm typecheck` + `pnpm test`
+3. `pnpm build:web`
+4. 上传 `dist-web` 作为 Pages 构件并发布
+
+Pages 的 Source 已设为 **GitHub Actions**（`build_type: workflow`）。
+
+**备用路径：`gh-pages` 分支**
+
+`publish-web.ps1` 会本地构建并把产物推到 `gh-pages` 分支，同时把 Pages 源切回分支模式。
+适合 Actions 不可用（例如 Actions 配额用尽或 token 缺 `workflow` 权限）时应急。
+仓库里仍保留该分支作为兜底，平时不用。
 
 ## 为什么 iPhone 不能装桌面版
 

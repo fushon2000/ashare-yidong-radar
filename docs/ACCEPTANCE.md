@@ -5,8 +5,8 @@
 同一套引擎与渲染层，额外构建出可在 iPhone / Android / 桌面浏览器使用的网页版。
 
 - 在线地址：<https://fushon2000.github.io/ashare-yidong-radar/>
-- 部署方式：本地构建 `dist-web` → 推送 `gh-pages` 分支 → GitHub Pages 自动发布
-- CI 配置暂存于 `docs/deploy/pages.yml`（当前 PAT 缺 `workflow` 权限，无法提交 `.github/workflows/`，故改用分支部署）
+- 部署方式：推 `main` 触发 GitHub Actions（typecheck + 单测 + `build:web`）→ 上传 Pages 构件发布；Pages Source 为 `GitHub Actions`
+- 备用部署：`publish-web.ps1` 构建后推 `gh-pages` 分支并切回分支模式（Actions 不可用时应急）
 
 ### 实现
 
