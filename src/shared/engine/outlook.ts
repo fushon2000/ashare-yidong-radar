@@ -7,7 +7,7 @@ import type {
   ThresholdSet
 } from '../types'
 import type { AlignedRow } from './series'
-import { roundPrice } from './series'
+import { computeAllWindows, lastWindow, roundPrice } from './series'
 import { countStateOf } from './counting'
 
 export interface OutlookInput {
@@ -200,6 +200,12 @@ export function buildOutlook(input: OutlookInput): OutlookResult {
   const direction = input.countDirection ?? 1
   const todayPct = series.length > 0 ? series[series.length - 1].stockPct * 100 : 0
   const countState = countStateOf(series, thresholds.ordinary3, countRequired, mode, direction)
+  // 当日那行与偏离卡片是同一组数：卡片用 computeAllWindows，测算表当日行之前
+  // 用 solveNeedUp 重算了一遍，两条公式代数等价、浮点路径不同，原始值正好落在
+  // 分位边界上时就会差一分钱 / 0.01 个百分点（真视通 2026-11-27 收盘：30 日
+  // 触发价卡片 ¥36.42、测算表 ¥36.43）。当日行直接复用卡片的窗口值，第二日
+  // 起没有卡片对照，仍用 solveNeedUp。
+  const currentWindows = computeAllWindows(series, thresholds)
   const notes: string[] = []
 
   if (series.length === 0) {
@@ -216,12 +222,14 @@ export function buildOutlook(input: OutlookInput): OutlookResult {
       const solved = solveNeedUp(series, window, day, threshold, indexFuture)
       const needUpPct = solved === null ? null : solved.needUpPct
       const rawNeed = needUpPct !== null && needUpPct > 0 ? needUpPct : 0
+      // 当日行复用偏离卡片的窗口值（见上），其余时点用闭式解。
+      const currentRow = day === 0 ? lastWindow(currentWindows, window) : undefined
       return {
         window,
         threshold,
-        deviationAt: solved?.deviationAt ?? 0,
+        deviationAt: currentRow?.deviation ?? solved?.deviationAt ?? 0,
         needUpPct,
-        targetPrice: rawNeed > 0 ? roundPrice(currentPrice * (1 + rawNeed / 100)) : null,
+        targetPrice: currentRow?.triggerPrice ?? (rawNeed > 0 ? roundPrice(currentPrice * (1 + rawNeed / 100)) : null),
         limitUpsNeeded: needUpPct === null ? null : limitUpsFor(rawNeed, limitPct),
         feasible: needUpPct !== null && rawNeed / 100 <= budget + 1e-9,
         triggered: needUpPct !== null && needUpPct <= 0

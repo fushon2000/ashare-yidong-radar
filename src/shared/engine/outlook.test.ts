@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { DailyBar } from '../types'
 import { buildInstrument, severeCountFor, thresholdSetFor } from './rules'
-import { buildAlignedSeries } from './series'
+import { buildAlignedSeries, computeAllWindows } from './series'
 import { countStateOf, scanOccurrences, threeDayDeviation } from './counting'
 import { buildOutlook, gainBudget, projectSeries, solveNeedUp } from './outlook'
 
@@ -188,6 +188,31 @@ describe('buildOutlook 输出', () => {
     const ten = result.days[0].severe.find((cell) => cell.window === 10)!
     expect(ten.triggered).toBe(true)
     expect(ten.needUpPct).toBeLessThanOrEqual(0)
+  })
+
+  it('shows the same day-0 deviation and trigger price as the deviation cards', () => {
+    // 回归：真视通 2026-11-27 收盘，30 日触发价卡片 ¥36.42、测算表当日行
+    // ¥36.43 —— 两条代数等价的公式在分位边界上算出了不同结果。当日行必须
+    // 与卡片共用同一组窗口值，第二日起才没有卡片对照。
+    const pcts = [...flat(35), 0.05, -0.02, 0.08, 0.03, -0.01, 0.07, 0.02, 0.04, -0.03, 0.06]
+    const series = seriesOf(pcts)
+    const thresholds = thresholdSetFor('SH_MAIN', false)
+    const result = buildOutlook({
+      series,
+      thresholds,
+      limitPct: 0.1,
+      currentPrice: 100,
+      countRequired: 4
+    })
+    const windows = computeAllWindows(series, thresholds)
+    for (const window of [10, 30] as const) {
+      const cell = result.days[0].severe.find((item) => item.window === window)!
+      const card = windows.find((item) => item.window === window)!
+      expect(cell.deviationAt).toBe(card.deviation)
+      expect(cell.targetPrice).toBe(card.triggerPrice)
+    }
+    // 第二日起仍用闭式解，不受当日行复用影响。
+    expect(result.days[1].severe.find((cell) => cell.window === 10)!.needUpPct).not.toBeNull()
   })
 
   it('reaches 4 occurrences at 8 limit-ups because each 3-day window is already 21%', () => {
